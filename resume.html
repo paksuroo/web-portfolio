@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>John Raymond Pesino - Resume</title>
+        <style>
+            :root {
+                --bg-color: #0d1117;
+                --card-color: #161b22;
+                --accent: #00e5ff;
+                --text-color: #f0f0f0;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: var(--bg-color);
+                font-family: Arial, sans-serif;
+                color: var(--text-color);
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+            }
+
+            .resume-container {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                background-color: var(--bg-color);
+            }
+
+            .pdf-viewer {
+                flex: 1;
+                border: none;
+                width: 100%;
+                height: 100%;
+                background-color: #fff; /* White background for PDF */
+            }
+
+            .footer {
+                text-align: center;
+                padding: 10px;
+                background-color: var(--card-color);
+                border-top: 1px solid var(--accent);
+                font-size: 0.9rem;
+            }
+
+            .footer small {
+                color: #aaa;
+            }
+
+            /* Mobile adjustments */
+            @media (max-width: 768px) {
+                .pdf-viewer {
+                    height: 80vh; /* shorter so footer is visible */
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="resume-container">
+            <iframe
+                class="pdf-viewer"
+                src="resume.pdf#toolbar=0&navpanes=0&scrollbar=0"
+                type="application/pdf"
+                title="John Raymond Pesino's Resume"
+            ></iframe>
+            <div class="footer">
+                <small>© 2025 John Raymond Pesino. All rights reserved.</small>
+            </div>
+        </div>
+
+        <script>
+            // Disable right-click inside the iframe
+            document.addEventListener("contextmenu", function (e) {
+                if (e.target.tagName === "IFRAME") {
+                    e.preventDefault();
+                }
+            });
+        </script>
+    </body>
+</html>
