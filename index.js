@@ -21,3 +21,61 @@ document.querySelectorAll('.nav-link[href^="#"]').forEach((link) => {
         }
     });
 });
+
+// Project modals functionality
+document.addEventListener("DOMContentLoaded", function () {
+    // Add click event to project containers
+    const projectContainers = document.querySelectorAll(
+        ".project-carousel-container"
+    );
+
+    projectContainers.forEach((container, index) => {
+        container.addEventListener("click", function () {
+            const modalId = `projectModal${index + 1}`;
+            const modal = new bootstrap.Modal(document.getElementById(modalId));
+            modal.show();
+
+            // Reset carousel to first slide when modal opens
+            const carousel = document.querySelector(`#${modalId} .carousel`);
+            if (carousel) {
+                const carouselInstance = new bootstrap.Carousel(carousel);
+                carouselInstance.to(0);
+            }
+        });
+    });
+
+    // Prevent carousel navigation from triggering modal
+    const carousels = document.querySelectorAll(".carousel");
+    carousels.forEach((carousel) => {
+        carousel.addEventListener("click", function (e) {
+            e.stopPropagation();
+        });
+    });
+
+    // Prevent project links from triggering modal
+    const projectLinks = document.querySelectorAll(".project-link");
+    projectLinks.forEach((link) => {
+        link.addEventListener("click", function (e) {
+            e.stopPropagation();
+
+            // For disabled links, prevent default behavior
+            if (
+                link.classList.contains("disabled") ||
+                link.getAttribute("href") === "#"
+            ) {
+                e.preventDefault();
+            }
+        });
+    });
+
+    // Close modal when clicking outside content
+    const modals = document.querySelectorAll(".modal");
+    modals.forEach((modal) => {
+        modal.addEventListener("click", function (e) {
+            if (e.target === modal) {
+                const modalInstance = bootstrap.Modal.getInstance(modal);
+                modalInstance.hide();
+            }
+        });
+    });
+});
