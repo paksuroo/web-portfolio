@@ -160,7 +160,7 @@ h6 {
 
 /* Projects Section - Fixed */
 .project-carousel-container {
-    height: 600px; /* Fixed height for all project containers */
+    height: 580px; /* Fixed height for all project containers */
     display: flex;
     flex-direction: column;
     margin-bottom: 20px;
@@ -603,4 +603,102 @@ footer a:hover {
 }
 .back-to-top:hover {
     text-decoration: underline;
+}
+
+/* Social Media Contact Section */
+.social-media-container {
+    margin: 2rem 0;
+}
+
+.social-media-card {
+    display: block;
+    padding: 1.5rem 1rem;
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    background: var(--card-color);
+    text-decoration: none;
+    color: var(--text-color);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.social-media-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 229, 255, 0.2);
+    color: var(--text-color);
+    text-decoration: none;
+}
+
+.social-icon-wrapper {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: rgba(0, 229, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.social-media-card:hover .social-icon-wrapper {
+    background: var(--accent);
+    transform: scale(1.1);
+}
+
+.social-icon-wrapper i {
+    font-size: 1.8rem;
+    color: var(--accent);
+    transition: all 0.3s ease;
+}
+
+.social-media-card:hover .social-icon-wrapper i {
+    color: #000;
+}
+
+.social-media-card h5 {
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.social-media-card p {
+    margin: 0;
+    color: #aaa;
+}
+
+.contact-email {
+    text-align: center;
+}
+
+.email-link {
+    color: var(--accent);
+    font-size: 1.2rem;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.email-link:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .social-media-card {
+        padding: 1.2rem 0.8rem;
+    }
+
+    .social-icon-wrapper {
+        width: 60px;
+        height: 60px;
+    }
+
+    .social-icon-wrapper i {
+        font-size: 1.5rem;
+    }
+
+    .email-link {
+        font-size: 1.1rem;
+    }
 }
