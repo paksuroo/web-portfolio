@@ -8,88 +8,205 @@ window.addEventListener("scroll", function () {
     }
 });
 
-// Enhanced smooth scroll with offset for navbar
+function computeNavbarHeight() {
+    const navbar = document.querySelector(".navbar");
+    const navbarCollapse = document.querySelector(".navbar-collapse");
+    if (!navbar) return 0;
+
+    let height = navbar.getBoundingClientRect().height;
+
+    // If collapse is visible and taller (mobile expanded), use the expanded height
+    if (navbarCollapse && navbarCollapse.classList.contains("show")) {
+        const collapseH = navbarCollapse.getBoundingClientRect().height;
+        if (collapseH > height) height = collapseH;
+    }
+
+    return Math.ceil(height); // integer px is fine
+}
+
+// ---------- helper: wait until collapse is hidden (works with/without Bootstrap) ----------
+function waitForCollapseHidden(navbarCollapse) {
+    return new Promise((resolve) => {
+        if (!navbarCollapse || !navbarCollapse.classList.contains("show")) {
+            return resolve();
+        }
+
+        // If Bootstrap's JS is present, listen for its event
+        if (typeof bootstrap !== "undefined") {
+            const handler = () => {
+                navbarCollapse.removeEventListener(
+                    "hidden.bs.collapse",
+                    handler
+                );
+                resolve();
+            };
+            navbarCollapse.addEventListener("hidden.bs.collapse", handler, {
+                once: true,
+            });
+            return;
+        }
+
+        // Fallback: observe class changes (detect removal of "show")
+        const mo = new MutationObserver((mutations) => {
+            for (const m of mutations) {
+                if (m.attributeName === "class") {
+                    if (!navbarCollapse.classList.contains("show")) {
+                        mo.disconnect();
+                        return resolve();
+                    }
+                }
+            }
+        });
+        mo.observe(navbarCollapse, { attributes: true });
+
+        // Safety timeout (use computed transition duration if available)
+        const cs = window.getComputedStyle(navbarCollapse);
+        const dur = parseFloat(cs.transitionDuration) || 0.35; // seconds
+        setTimeout(() => {
+            if (mo) mo.disconnect();
+            resolve();
+        }, dur * 1000 + 120);
+    });
+}
+
+// ---------- Enhanced smooth scroll that waits for mobile collapse to close ----------
 document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-    anchor.addEventListener("click", function (e) {
-        e.preventDefault();
+    anchor.addEventListener("click", async function (e) {
         const targetId = this.getAttribute("href");
-        if (targetId === "#") return;
+        if (!targetId || targetId === "#") return; // ignore top anchors / empty
 
         const targetElement = document.querySelector(targetId);
-        if (targetElement) {
-            const navbarHeight = document.querySelector(".navbar").offsetHeight;
-            const targetPosition =
-                targetElement.getBoundingClientRect().top +
-                window.pageYOffset -
-                navbarHeight;
+        if (!targetElement) return;
 
-            window.scrollTo({
-                top: targetPosition,
-                behavior: "smooth",
-            });
+        e.preventDefault();
 
-            // Update URL hash without jumping
-            history.pushState(null, null, targetId);
+        const navbarCollapse = document.querySelector(".navbar-collapse");
+        const navbarToggler = document.querySelector(".navbar-toggler");
+
+        // If mobile menu is open, hide it first (use Bootstrap if available)
+        if (navbarCollapse && navbarCollapse.classList.contains("show")) {
+            if (typeof bootstrap !== "undefined") {
+                const bsCollapse =
+                    bootstrap.Collapse.getInstance(navbarCollapse) ||
+                    new bootstrap.Collapse(navbarCollapse, { toggle: false });
+                bsCollapse.hide();
+            } else {
+                // fallback: manually hide classes/attributes
+                navbarCollapse.classList.remove("show");
+                if (navbarToggler) {
+                    navbarToggler.setAttribute("aria-expanded", "false");
+                    navbarToggler.classList.add("collapsed");
+                }
+            }
+
+            // wait until it's hidden (handles both bootstrap & manual)
+            await waitForCollapseHidden(navbarCollapse);
         }
+
+        // compute navbar height after collapse hidden
+        const navbarHeight = computeNavbarHeight();
+
+        // small extra spacing to avoid exact top flush
+        const extraOffset = 8;
+
+        const targetPosition =
+            targetElement.getBoundingClientRect().top +
+            window.pageYOffset -
+            navbarHeight -
+            extraOffset;
+
+        window.scrollTo({
+            top: Math.max(0, Math.floor(targetPosition)),
+            behavior: "smooth",
+        });
+
+        // update URL hash without immediate jump
+        history.pushState(null, null, targetId);
     });
 });
 
-// Project modals functionality
-document.addEventListener("DOMContentLoaded", function () {
-    if (typeof bootstrap !== "undefined") {
-        const projectContainers = document.querySelectorAll(
-            ".project-carousel-container"
-        );
+// ---------- Enhanced navigation active state (uses same dynamic height) ----------
+function enhanceNavigation() {
+    const sections = document.querySelectorAll("section[id]");
+    const navLinks = document.querySelectorAll(".nav-link");
 
-        projectContainers.forEach((container, index) => {
-            container.addEventListener("click", function () {
-                const modalId = `projectModal${index + 1}`;
-                const modal = new bootstrap.Modal(
-                    document.getElementById(modalId)
-                );
-                modal.show();
+    function updateActiveNav() {
+        const navbarHeight = computeNavbarHeight();
+        let current = "";
 
-                const carousel = document.querySelector(
-                    `#${modalId} .carousel`
-                );
-                if (carousel) {
-                    const carouselInstance = new bootstrap.Carousel(carousel);
-                    carouselInstance.to(0);
-                }
-            });
+        // pick the last section that has its top <= navbarHeight + small offset
+        sections.forEach((section) => {
+            const rectTop = section.getBoundingClientRect().top;
+            if (rectTop - navbarHeight <= 5) {
+                current = section.getAttribute("id");
+            }
         });
 
-        const carousels = document.querySelectorAll(".carousel");
-        carousels.forEach((carousel) => {
-            carousel.addEventListener("click", function (e) {
-                e.stopPropagation();
-            });
-        });
-
-        const projectLinks = document.querySelectorAll(".project-link");
-        projectLinks.forEach((link) => {
-            link.addEventListener("click", function (e) {
-                e.stopPropagation();
-                if (
-                    link.classList.contains("disabled") ||
-                    link.getAttribute("href") === "#"
-                ) {
-                    e.preventDefault();
-                }
-            });
-        });
-
-        const modals = document.querySelectorAll(".modal");
-        modals.forEach((modal) => {
-            modal.addEventListener("click", function (e) {
-                if (e.target === modal) {
-                    const modalInstance = bootstrap.Modal.getInstance(modal);
-                    modalInstance.hide();
-                }
-            });
+        navLinks.forEach((link) => {
+            const href = link.getAttribute("href") || "";
+            const targetHash = href.split("#")[1]
+                ? `#${href.split("#")[1]}`
+                : href;
+            link.classList.remove("active");
+            if (targetHash === `#${current}`) {
+                link.classList.add("active");
+            }
         });
     }
-});
+
+    window.addEventListener("scroll", updateActiveNav, { passive: true });
+    window.addEventListener("resize", updateActiveNav);
+    // Also update when collapse shows/hides (Bootstrap events), or mutation fallback
+    const navbarCollapse = document.querySelector(".navbar-collapse");
+    if (navbarCollapse) {
+        if (typeof bootstrap !== "undefined") {
+            navbarCollapse.addEventListener(
+                "shown.bs.collapse",
+                updateActiveNav
+            );
+            navbarCollapse.addEventListener(
+                "hidden.bs.collapse",
+                updateActiveNav
+            );
+        } else {
+            const mo = new MutationObserver(() => updateActiveNav());
+            mo.observe(navbarCollapse, { attributes: true });
+        }
+    }
+
+    // initial highlight
+    updateActiveNav();
+}
+
+// ---------- Navbar auto-close: only auto-close for non-hash links (prevent race) ----------
+function setupNavbarAutoClose() {
+    const navbarToggler = document.querySelector(".navbar-toggler");
+    const navbarCollapse = document.querySelector(".navbar-collapse");
+
+    if (!navbarToggler || !navbarCollapse) return;
+
+    document.querySelectorAll(".navbar-nav .nav-link").forEach((navLink) => {
+        navLink.addEventListener("click", function () {
+            const href = (this.getAttribute("href") || "").trim();
+
+            // Only auto-close immediately for links that are not internal anchors
+            if (!href.startsWith("#") && window.innerWidth < 992) {
+                if (typeof bootstrap !== "undefined") {
+                    const bsCollapse =
+                        bootstrap.Collapse.getInstance(navbarCollapse) ||
+                        new bootstrap.Collapse(navbarCollapse, {
+                            toggle: false,
+                        });
+                    bsCollapse.hide();
+                } else {
+                    navbarCollapse.classList.remove("show");
+                    navbarToggler.setAttribute("aria-expanded", "false");
+                    navbarToggler.classList.add("collapsed");
+                }
+            }
+        });
+    });
+}
 
 // Scroll progress bar
 function createScrollProgress() {
@@ -220,33 +337,6 @@ function setupLazyLoading() {
     });
 }
 
-// Enhanced navigation active state
-function enhanceNavigation() {
-    const sections = document.querySelectorAll("section");
-    const navLinks = document.querySelectorAll(".nav-link");
-
-    function updateActiveNav() {
-        let current = "";
-        sections.forEach((section) => {
-            const sectionTop = section.offsetTop;
-            const navbarHeight = document.querySelector(".navbar").offsetHeight;
-            if (window.scrollY >= sectionTop - navbarHeight - 50) {
-                current = section.getAttribute("id");
-            }
-        });
-
-        navLinks.forEach((link) => {
-            link.classList.remove("active");
-            if (link.getAttribute("href") === `#${current}`) {
-                link.classList.add("active");
-            }
-        });
-    }
-
-    window.addEventListener("scroll", updateActiveNav);
-    updateActiveNav();
-}
-
 // Theme toggle with localStorage
 function setupThemeToggle() {
     const toggleBtn = document.getElementById("theme-toggle");
@@ -276,9 +366,9 @@ function setupThemeToggle() {
 document.addEventListener("DOMContentLoaded", function () {
     createScrollProgress();
     animateSkillCounters();
-    typewriterEffect();
     enhanceModals();
     setupLazyLoading();
     enhanceNavigation();
-    setupThemeToggle(); // ✅ enable theme toggle
+    setupThemeToggle();
+    setupNavbarAutoClose();
 });
