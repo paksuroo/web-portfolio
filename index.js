@@ -264,37 +264,6 @@ function animateSkillCounters() {
     counters.forEach((card) => observer.observe(card));
 }
 
-// Typewriter effect with speed in ms per character
-function typewriterEffect() {
-    const textElement = document.querySelector(".intro-text");
-    if (!textElement) return;
-
-    const originalText = textElement.textContent;
-    textElement.textContent = "";
-    let i = 0;
-
-    // Typing speed (milliseconds per character)
-    const speed = 20; // adjust this value
-
-    function type() {
-        if (i < originalText.length) {
-            textElement.textContent += originalText.charAt(i);
-            i++;
-            setTimeout(type, speed);
-        }
-    }
-
-    // Start typing when element is in view
-    const observer = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-            type();
-            observer.disconnect();
-        }
-    });
-
-    observer.observe(textElement);
-}
-
 // Enhanced modal transitions
 function enhanceModals() {
     document.querySelectorAll(".modal").forEach((modal) => {
